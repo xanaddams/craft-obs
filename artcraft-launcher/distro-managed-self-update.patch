@@ -1,0 +1,16 @@
+diff --git a/crates/native/src/self_update.rs b/crates/native/src/self_update.rs
+index a4e4fd6..99f2e00 100644
+--- a/crates/native/src/self_update.rs
++++ b/crates/native/src/self_update.rs
+@@ -136,6 +136,11 @@ fn detect(exe: &Path) -> Option<Install> {
+     if exe != Path::new("/usr/bin").join(LAUNCHER.id) {
+         return None;
+     }
++    // Distribution packages (e.g. an OBS/zypper repo) are updated by the system package
++    // manager; replacing them with the upstream release package would fight it.
++    if Path::new("/usr/share/artcraft-launcher/distro-package").exists() {
++        return None;
++    }
+     let t = std::time::Duration::from_secs(10);
+     if process::capture("dpkg-query", &["-W", "-f", "${db:Status-Status}", LAUNCHER.id], t).is_some_and(|s| s.trim() == "installed") {
+         return Some(Install::Package(PackageKind::Deb, exe.to_path_buf()));
