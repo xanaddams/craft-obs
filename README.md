@@ -3,9 +3,11 @@
 openSUSE packages for the Craft App Suite, built on the
 [Open Build Service](https://build.opensuse.org) and installed and updated with zypper.
 
-Each folder is one OBS package (`<name>.spec`, `_service`, any patches). A daily GitHub
-Action checks the upstream repo for a new release, bumps `_service` and pushes the change
-to OBS, which fetches the source, vendors the Rust crates, builds, signs and publishes.
+Each folder is one OBS package: `<name>.spec`, any patches, and `upstream.conf` (the
+upstream repo and the packaged tag). A daily GitHub Action checks upstream for a new
+release, bumps the tag and the spec's `Version:`, builds the source tarball and the
+vendored Rust crates (OBS builds have no network), uploads everything and commits to OBS,
+which builds, signs and publishes.
 
 | Package | Upstream |
 |---|---|
@@ -23,8 +25,8 @@ to OBS, which fetches the source, vendors the Rust crates, builds, signs and pub
    - secret `OBS_PASSWORD`: your OBS password
    - variable `OBS_PROJECT`: `home:<obs-user>:craft` (optional; that is the default)
 5. **First run.** **Actions > OBS sync > Run workflow.** It uploads the package files to
-   OBS. Follow the build under the package's page on OBS; the first build takes a while
-   (it vendors about 700 MB of crates).
+   OBS (about 50 MB, mostly the vendored crates). Follow the build on the package's page;
+   a build takes 10-20 minutes.
 
 ## Install on Slowroll
 
@@ -41,9 +43,9 @@ From then on, `zypper dup` picks up new releases.
 ## How updates flow
 
 ```
-storytold tags vX.Y.Z  ->  daily Action bumps _service, commits here, uploads to OBS
-                       ->  OBS: tar_scm + recompress + set_version + cargo_vendor
-                       ->  build for each repository, sign, publish  ->  zypper dup
+storytold tags vX.Y.Z  ->  daily Action bumps upstream.conf + spec, commits here
+                       ->  Action: git archive + cargo vendor -> two .tar.zst, upload to OBS
+                       ->  OBS: build for each repository, sign, publish  ->  zypper dup
 ```
 
 Editing a spec or patch here and pushing to `main` uploads it to OBS straight away.
@@ -61,6 +63,7 @@ emails you and keeps the last good version published.
 
 ## Adding another app
 
-Copy `artcraft-launcher/`, rename the folder and spec, point `_service` at the new repo
-and tag, and adjust the spec's build and install steps. Create the matching empty
+Copy `artcraft-launcher/`, rename the folder and spec, set `REPO` and `TAG` in
+`upstream.conf`, and adjust the spec's build and install steps (the tarballs are named
+`<repo-name>-<version>.tar.zst` and `vendor-<version>.tar.zst`). Create the matching empty
 package on OBS; the Action does the rest.

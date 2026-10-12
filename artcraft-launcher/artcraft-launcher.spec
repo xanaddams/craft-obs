@@ -9,14 +9,14 @@
 #
 
 Name:           artcraft-launcher
-# Version is rewritten by the set_version service from the upstream tag.
-Version:        0.2.1
+# Version is set by the obs-sync workflow from upstream.conf.
+Version:        0.3.2
 Release:        0
 Summary:        Install, update and launch the Craft App Suite
 License:        Apache-2.0 OR MIT
 URL:            https://github.com/storytold/craft-launcher
 Source0:        craft-launcher-%{version}.tar.zst
-Source1:        vendor.tar.zst
+Source1:        vendor-%{version}.tar.zst
 # Leave self-updates to zypper: the launcher would otherwise offer to replace this
 # package with upstream's GitHub RPM.
 Patch0:         distro-managed-self-update.patch
