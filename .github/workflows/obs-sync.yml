@@ -47,11 +47,13 @@ jobs:
             latest=$(gh api "repos/$repo/releases/latest" --jq .tag_name)
             echo "$pkg: upstream $repo, packaged $current, latest $latest"
             if [ -n "$latest" ] && [ "$latest" != "$current" ]; then
+              # RPM versions can't contain "-"; "~" sorts a pre-release before the release.
+              rpmver=$(printf '%s' "${latest#v}" | tr '-' '~')
               sed -i "s/^TAG=.*/TAG=$latest/" "$conf"
-              sed -i -E "s/^(Version:[[:space:]]+).*/\1${latest#v}/" "$pkg"/*.spec
+              sed -i -E "s/^(Version:[[:space:]]+).*/\1$rpmver/" "$pkg"/*.spec
               # openSUSE changelog entry (OBS turns <pkg>.changes into the RPM %changelog).
               entry=$(printf -- '-------------------------------------------------------------------\n%s - %s\n\n- Update to version %s\n  * https://github.com/%s/releases/tag/%s\n' \
-                "$(LC_ALL=C date -u '+%a %b %d %H:%M:%S UTC %Y')" "$CHANGES_AUTHOR" "${latest#v}" "$repo" "$latest")
+                "$(LC_ALL=C date -u '+%a %b %d %H:%M:%S UTC %Y')" "$CHANGES_AUTHOR" "$rpmver" "$repo" "$latest")
               { printf '%s\n\n' "$entry"; cat "$pkg/$pkg.changes" 2>/dev/null; } > "$pkg/.changes.new"
               mv "$pkg/.changes.new" "$pkg/$pkg.changes"
               changed="$changed $pkg:$latest"

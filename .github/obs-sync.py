@@ -113,7 +113,7 @@ def sync(pkg_dir, comment):
     pkg = pkg_dir.name
     conf = read_conf(pkg_dir / "upstream.conf")
     repo, tag = conf["REPO"], conf["TAG"]
-    name, ver = repo.split("/")[1], tag.removeprefix("v")
+    name, ver = repo.split("/")[1], tag.removeprefix("v").replace("-", "~")  # as in the spec
     print(f"== {pkg}: {repo} {tag} -> {PROJECT}/{pkg}", flush=True)
 
     listing = ensure_package(pkg, spec_summary(pkg_dir))
