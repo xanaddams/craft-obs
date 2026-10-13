@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Oct 13 21:44:42 UTC 2026 - obs-sync <xanaddams@users.noreply.github.com>
+
+- Update to version 0.4.1
+  * https://github.com/storytold/craft-launcher/releases/tag/v0.4.1
+
+-------------------------------------------------------------------
 Tue Oct 13 12:12:08 UTC 2026 - obs-sync <xanaddams@users.noreply.github.com>
 
 - Leave Craft apps installed from this repository to zypper
