@@ -17,9 +17,9 @@ License:        Apache-2.0 OR MIT
 URL:            https://github.com/storytold/craft-launcher
 Source0:        craft-launcher-%{version}.tar.zst
 Source1:        vendor-%{version}.tar.zst
-# Leave self-updates to zypper: the launcher would otherwise offer to replace this
-# package with upstream's GitHub RPM.
-Patch0:         distro-managed-self-update.patch
+# Leave updates to zypper: without this the launcher would offer to replace itself, and any
+# Craft app installed from this repository, with upstream's GitHub RPM.
+Patch0:         distro-managed.patch
 BuildRequires:  cargo >= 1.90
 BuildRequires:  cargo-packaging
 BuildRequires:  desktop-file-utils
@@ -46,21 +46,14 @@ GridCraft, CADCraft and SoundCraft), installs the right build for this computer,
 and opens them from one window or the system tray.
 
 This build is managed by the system package manager and does not update itself.
+Craft apps installed from the same repository are left to zypper as well.
 
 %prep
 %autosetup -p1 -a1 -n craft-launcher-%{version}
-# Make sure cargo builds from the vendored crates (in case the vendor tarball
-# doesn't carry its own .cargo/config.toml).
-if ! grep -q vendored-sources .cargo/config.toml 2>/dev/null; then
-cat >> .cargo/config.toml <<'EOF2'
-
-[source.crates-io]
-replace-with = "vendored-sources"
-
-[source.vendored-sources]
-directory = "vendor"
-EOF2
-fi
+# cargo-vendor.toml (in the vendor tarball) points crates.io and git dependencies at
+# cargo-vendor/ (not vendor/, which some apps use for their own patched crates).
+mkdir -p .cargo
+cat cargo-vendor.toml >> .cargo/config.toml
 
 %build
 export ARTCRAFT_LAUNCHER_BUILD_DATE=$(date -u -d "@${SOURCE_DATE_EPOCH:-$(date +%%s)}" +%%Y-%%m-%%d)
@@ -69,6 +62,10 @@ export ARTCRAFT_LAUNCHER_BUILD_DATE=$(date -u -d "@${SOURCE_DATE_EPOCH:-$(date +
 %install
 BIN=$(find target -type f -path '*/release/artcraft-launcher' | head -n1)
 install -Dm0755 "$BIN" %{buildroot}%{_bindir}/artcraft-launcher
+%if 0%{!?_enable_debug_packages:1}
+# Without a -debuginfo package nothing strips the binary.
+strip --strip-all %{buildroot}%{_bindir}/artcraft-launcher
+%endif
 
 ID=ai.storyteller.artcraft-launcher
 install -Dm0644 packaging/linux/$ID.desktop %{buildroot}%{_datadir}/applications/$ID.desktop

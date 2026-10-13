@@ -1,0 +1,10 @@
+-------------------------------------------------------------------
+Tue Oct 13 12:12:08 UTC 2026 - obs-sync <xanaddams@users.noreply.github.com>
+
+- Leave Craft apps installed from this repository to zypper
+- Strip the binary
+
+-------------------------------------------------------------------
+Mon Oct 12 18:00:00 UTC 2026 - obs-sync <xanaddams@users.noreply.github.com>
+
+- Initial package, version 0.3.2

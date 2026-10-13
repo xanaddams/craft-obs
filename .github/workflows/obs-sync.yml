@@ -36,6 +36,7 @@ jobs:
       - name: Bump to the latest upstream releases
         env:
           GH_TOKEN: ${{ github.token }}
+          CHANGES_AUTHOR: "obs-sync <xanaddams@users.noreply.github.com>"
         run: |
           set -euo pipefail
           changed=""
@@ -48,6 +49,11 @@ jobs:
             if [ -n "$latest" ] && [ "$latest" != "$current" ]; then
               sed -i "s/^TAG=.*/TAG=$latest/" "$conf"
               sed -i -E "s/^(Version:[[:space:]]+).*/\1${latest#v}/" "$pkg"/*.spec
+              # openSUSE changelog entry (OBS turns <pkg>.changes into the RPM %changelog).
+              entry=$(printf -- '-------------------------------------------------------------------\n%s - %s\n\n- Update to version %s\n  * https://github.com/%s/releases/tag/%s\n' \
+                "$(LC_ALL=C date -u '+%a %b %d %H:%M:%S UTC %Y')" "$CHANGES_AUTHOR" "${latest#v}" "$repo" "$latest")
+              { printf '%s\n\n' "$entry"; cat "$pkg/$pkg.changes" 2>/dev/null; } > "$pkg/.changes.new"
+              mv "$pkg/.changes.new" "$pkg/$pkg.changes"
               changed="$changed $pkg:$latest"
             fi
           done

@@ -3,11 +3,12 @@
 
 For each package:
   - the source tarball (<name>-<ver>.tar.zst, from `git archive` of the upstream tag) and
-    the vendored crates (vendor-<ver>.tar.zst, from `cargo vendor`) are built here, unless
+    the vendored crates (vendor-<ver>.tar.zst: cargo-vendor/ and cargo-vendor.toml) are built here, unless
     OBS already has them for this version, because build.opensuse.org has no network access
     during builds and doesn't run the cargo_vendor service;
   - the spec, patches and other files in the folder are uploaded when they differ from OBS;
-  - files on OBS that are no longer wanted (old tarballs, a stale _service) are dropped.
+  - files on OBS that are no longer wanted (old tarballs, a stale _service) are dropped;
+  - a package that doesn't exist on OBS yet is created.
 Then one OBS commit is made per package that changed, which starts the build.
 
 Env: OBS_USER, OBS_PASSWORD, optional OBS_PROJECT (default home:<OBS_USER>:craft),
@@ -32,6 +33,12 @@ AUTH = "Basic " + base64.b64encode(f"{USER}:{os.environ['OBS_PASSWORD']}".encode
 LOCAL_ONLY = {"upstream.conf"}
 
 
+class ObsError(Exception):
+    def __init__(self, code, message):
+        super().__init__(message)
+        self.code = code
+
+
 def obs(method, path, data=None, **params):
     url = API + path + ("?" + urllib.parse.urlencode(params) if params else "")
     req = urllib.request.Request(url, data=data, method=method, headers={"Authorization": AUTH})
@@ -41,7 +48,30 @@ def obs(method, path, data=None, **params):
         with urllib.request.urlopen(req, timeout=1800) as resp:
             return resp.read()
     except urllib.error.HTTPError as e:
-        sys.exit(f"OBS {method} {url}: {e.code}\n{e.read().decode(errors='replace')}")
+        raise ObsError(e.code, f"OBS {method} {url}: {e.code}\n{e.read().decode(errors='replace')}") from None
+
+
+def ensure_package(pkg, summary):
+    """Create the OBS package if it doesn't exist yet."""
+    try:
+        return obs("GET", f"/source/{PROJECT}/{pkg}")
+    except ObsError as e:
+        if e.code != 404:
+            raise
+    print(f"  creating package {PROJECT}/{pkg}", flush=True)
+    meta = ET.Element("package", name=pkg, project=PROJECT)
+    ET.SubElement(meta, "title").text = summary
+    ET.SubElement(meta, "description").text = summary
+    obs("PUT", f"/source/{PROJECT}/{pkg}/_meta", ET.tostring(meta))
+    return obs("GET", f"/source/{PROJECT}/{pkg}")
+
+
+def spec_summary(pkg_dir):
+    for spec in pkg_dir.glob("*.spec"):
+        for line in spec.read_text().splitlines():
+            if line.startswith("Summary:"):
+                return line.split(":", 1)[1].strip()
+    return pkg_dir.name
 
 
 def md5(path):
@@ -71,8 +101,11 @@ def make_tarballs(repo, tag, name, ver, out):
     src = out / "src"
     sh(f"git clone -q --depth 1 --branch {tag} https://github.com/{repo}.git {src}")
     sh(f"git -C {src} archive --prefix={name}-{ver}/ HEAD | zstd -q -19 -T0 -o {out}/{name}-{ver}.tar.zst")
-    sh("cargo vendor -q --locked --versioned-dirs vendor > /dev/null", cwd=src)
-    sh(f"tar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - vendor"
+    # cargo vendor prints the [source] replacements for crates.io *and* git dependencies;
+    # the spec appends them to .cargo/config.toml.
+    sh("cargo vendor --locked --versioned-dirs cargo-vendor > cargo-vendor.toml 2> /dev/null"
+       " && grep -q vendored-sources cargo-vendor.toml", cwd=src)
+    sh(f"tar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - cargo-vendor cargo-vendor.toml"
        f" | zstd -q -19 -T0 -o {out}/vendor-{ver}.tar.zst", cwd=src)
 
 
@@ -83,7 +116,8 @@ def sync(pkg_dir, comment):
     name, ver = repo.split("/")[1], tag.removeprefix("v")
     print(f"== {pkg}: {repo} {tag} -> {PROJECT}/{pkg}", flush=True)
 
-    remote = {e.get("name"): e.get("md5") for e in ET.fromstring(obs("GET", f"/source/{PROJECT}/{pkg}")).iter("entry")}
+    listing = ensure_package(pkg, spec_summary(pkg_dir))
+    remote = {e.get("name"): e.get("md5") for e in ET.fromstring(listing).iter("entry")}
     wanted = {}  # name -> md5
 
     for f in sorted(pkg_dir.iterdir()):
@@ -120,15 +154,22 @@ def sync(pkg_dir, comment):
     reply = obs("POST", f"/source/{PROJECT}/{pkg}", ET.tostring(filelist),
                 cmd="commitfilelist", comment=comment)
     if b'error="' in reply:
-        sys.exit(f"OBS commit for {pkg} reported missing files:\n{reply.decode()}")
+        raise RuntimeError(f"OBS commit for {pkg} reported missing files:\n{reply.decode()}")
     print(f"  committed to {PROJECT}/{pkg}", flush=True)
 
 
 def main():
     root = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else ".")
     comment = subprocess.run(["git", "log", "-1", "--format=%s"], capture_output=True, text=True, cwd=root).stdout.strip()
+    failed = []
     for conf in sorted(root.glob("*/upstream.conf")):
-        sync(conf.parent, comment or "obs-sync")
+        try:
+            sync(conf.parent, comment or "obs-sync")
+        except Exception as e:  # keep going: one broken package shouldn't hold up the rest
+            print(f"::error::{conf.parent.name}: {e}", flush=True)
+            failed.append(conf.parent.name)
+    if failed:
+        sys.exit(f"failed: {', '.join(failed)}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,35 @@
+diff --git a/crates/native/src/install.rs b/crates/native/src/install.rs
+index d62a213..8cbf1e9 100644
+--- a/crates/native/src/install.rs
++++ b/crates/native/src/install.rs
+@@ -190,6 +190,14 @@ fn published_checksum(release: &Release, asset: &Asset, http: &Http) -> Result<O
+ /// package, but updated by the user's AUR helper, which builds as the user and can't run behind
+ /// the password prompt.
+ pub fn managed_elsewhere(app: &CraftApp, installed: &Installed, uninstall: bool) -> Option<String> {
++    // Distribution packages (e.g. from an OBS/zypper repository) carry this marker: they are
++    // updated by the system package manager, and the upstream release package would replace them.
++    if !uninstall
++        && matches!(installed.source, InstallSource::Rpm | InstallSource::Deb)
++        && Path::new("/usr/share").join(app.id).join("distro-package").exists()
++    {
++        return Some(format!("{} is installed from your distribution's repositories. Update it with your package manager (for example: sudo zypper up {}).", app.name, app.id));
++    }
+     match installed.source {
+         InstallSource::Pacman if !uninstall => {
+             let pkg = installed.package.clone().unwrap_or_else(|| app.id.to_string());
+diff --git a/crates/native/src/self_update.rs b/crates/native/src/self_update.rs
+index a4e4fd6..99f2e00 100644
+--- a/crates/native/src/self_update.rs
++++ b/crates/native/src/self_update.rs
+@@ -136,6 +136,11 @@ fn detect(exe: &Path) -> Option<Install> {
+     if exe != Path::new("/usr/bin").join(LAUNCHER.id) {
+         return None;
+     }
++    // Distribution packages (e.g. an OBS/zypper repo) are updated by the system package
++    // manager; replacing them with the upstream release package would fight it.
++    if Path::new("/usr/share/artcraft-launcher/distro-package").exists() {
++        return None;
++    }
+     let t = std::time::Duration::from_secs(10);
+     if process::capture("dpkg-query", &["-W", "-f", "${db:Status-Status}", LAUNCHER.id], t).is_some_and(|s| s.trim() == "installed") {
+         return Some(Install::Package(PackageKind::Deb, exe.to_path_buf()));
