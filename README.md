@@ -20,6 +20,7 @@ and installed and updated with zypper.
 | `deckcraft` | [storytold/deckcraft](https://github.com/storytold/deckcraft) | Presentations (.pptx) |
 | `cadcraft` | [storytold/cadcraft](https://github.com/storytold/cadcraft) | 2D CAD (DXF, DWG) |
 | `soundcraft` | [storytold/soundcraft](https://github.com/storytold/soundcraft) | Audio recording and mixing |
+| `figcraft` | [storytold/figcraft](https://github.com/storytold/figcraft) | UI design and prototyping |
 
 ## Install
 

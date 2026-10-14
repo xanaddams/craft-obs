@@ -8,7 +8,9 @@ For each package:
     during builds and doesn't run the cargo_vendor service;
   - the spec, patches and other files in the folder are uploaded when they differ from OBS;
   - files on OBS that are no longer wanted (old tarballs, a stale _service) are dropped;
-  - a package that doesn't exist on OBS yet is created.
+  - a package that doesn't exist on OBS yet is created;
+  - if the spec uses craft-fonts-<ver>.tar.zst, the craft-fonts commit pinned in upstream's
+    release workflow is packed too (the fonts upstream's own release builds embed).
 Then one OBS commit is made per package that changed, which starts the build.
 
 Env: OBS_USER, OBS_PASSWORD, optional OBS_PROJECT (default home:<OBS_USER>:craft),
@@ -18,6 +20,7 @@ import base64
 import hashlib
 import os
 import pathlib
+import re
 import subprocess
 import sys
 import tempfile
@@ -97,7 +100,21 @@ def read_conf(path):
     return conf
 
 
-def make_tarballs(repo, tag, name, ver, out):
+FONTS_PIN = re.compile(
+    r"(?:CRAFT_FONTS_REF|craft-fonts-ref)\s*:\s*([0-9a-f]{40})"
+    r"|storytold/craft-fonts[^\n]*\n(?:[^\n]*\n){0,3}?\s*ref:\s*([0-9a-f]{40})")
+
+
+def fonts_pin(src):
+    """The craft-fonts commit upstream's release workflow embeds, at this tag."""
+    for wf in sorted((src / ".github" / "workflows").glob("*.y*ml")):
+        m = FONTS_PIN.search(wf.read_text())
+        if m:
+            return m.group(1) or m.group(2)
+    return None
+
+
+def make_tarballs(repo, tag, name, ver, out, fonts=False):
     src = out / "src"
     sh(f"git clone -q --depth 1 --branch {tag} https://github.com/{repo}.git {src}")
     sh(f"git -C {src} archive --prefix={name}-{ver}/ HEAD | zstd -q -19 -T0 -o {out}/{name}-{ver}.tar.zst")
@@ -107,6 +124,16 @@ def make_tarballs(repo, tag, name, ver, out):
        " && grep -q vendored-sources cargo-vendor.toml", cwd=src)
     sh(f"tar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - cargo-vendor cargo-vendor.toml"
        f" | zstd -q -19 -T0 -o {out}/vendor-{ver}.tar.zst", cwd=src)
+    if fonts:
+        # The fonts upstream's release builds embed (CRAFT_FONTS_DIR), at the commit they pin.
+        pin = fonts_pin(src)
+        if not pin:
+            raise RuntimeError(f"{repo} {tag}: no craft-fonts pin found in .github/workflows")
+        sh(f"git clone -q --filter=blob:none --no-checkout https://github.com/storytold/craft-fonts.git {out}/craft-fonts"
+           f" && git -C {out}/craft-fonts checkout -q {pin}")
+        sh(f"tar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - craft-fonts/fonts"
+           f" craft-fonts/LICENSE-APACHE craft-fonts/LICENSE-MIT craft-fonts/ATTRIBUTION.md"
+           f" | zstd -q -19 -T0 -o {out}/craft-fonts-{ver}.tar.zst", cwd=out)
 
 
 def sync(pkg_dir, comment):
@@ -128,13 +155,16 @@ def sync(pkg_dir, comment):
                 obs("PUT", f"/source/{PROJECT}/{pkg}/{f.name}", f.read_bytes(), rev="repository")
 
     tarballs = [f"{name}-{ver}.tar.zst", f"vendor-{ver}.tar.zst"]
+    fonts = any("craft-fonts-%{version}.tar.zst" in sp.read_text() for sp in pkg_dir.glob("*.spec"))
+    if fonts:
+        tarballs.append(f"craft-fonts-{ver}.tar.zst")
     if all(t in remote for t in tarballs):
         for t in tarballs:
             wanted[t] = remote[t]
     else:
         with tempfile.TemporaryDirectory() as tmp:
             out = pathlib.Path(tmp)
-            make_tarballs(repo, tag, name, ver, out)
+            make_tarballs(repo, tag, name, ver, out, fonts)
             for t in tarballs:
                 p = out / t
                 print(f"  uploading {t} ({p.stat().st_size // 1024 // 1024} MB)", flush=True)

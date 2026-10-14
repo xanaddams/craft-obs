@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Oct 14 14:05:20 UTC 2026 - obs-sync <xanaddams@users.noreply.github.com>
+
+- Embed the fonts upstream's release builds embed (storytold/craft-fonts at
+  the commit upstream pins); add OFL-1.1 to the licence
+
+-------------------------------------------------------------------
 Wed Oct 14 03:41:45 UTC 2026 - obs-sync <xanaddams@users.noreply.github.com>
 
 - Build without debug info, and with 4 codegen units on aarch64, so the

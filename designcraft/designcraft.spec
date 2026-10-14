@@ -17,10 +17,13 @@ Name:           designcraft
 Version:        0.7.1
 Release:        0
 Summary:        Lay out magazines, books and print documents
-License:        Apache-2.0 OR MIT
+License:        (Apache-2.0 OR MIT) AND OFL-1.1
 URL:            https://github.com/storytold/designcraft
 Source0:        designcraft-%{version}.tar.zst
 Source1:        vendor-%{version}.tar.zst
+# The fonts upstream's release builds embed: storytold/craft-fonts at the commit the
+# app's release workflow pins (packed by the obs-sync workflow).
+Source2:        craft-fonts-%{version}.tar.zst
 BuildRequires:  cargo >= 1.95
 BuildRequires:  cargo-packaging
 BuildRequires:  desktop-file-utils
@@ -49,6 +52,7 @@ This build is managed by the system package manager; update it with zypper.
 
 %prep
 %autosetup -p1 -a1 -n designcraft-%{version}
+%setup -q -T -D -a2 -n designcraft-%{version}
 # cargo-vendor.toml (in the vendor tarball) points crates.io and git dependencies at
 # cargo-vendor/ (not vendor/, which some apps use for their own patched crates).
 mkdir -p .cargo
@@ -60,6 +64,7 @@ cat cargo-vendor.toml >> .cargo/config.toml
 export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=4
 %endif
 export DESIGNCRAFT_BUILD_DATE=$(date -u -d "@${SOURCE_DATE_EPOCH:-$(date +%%s)}" +%%Y-%%m-%%d)
+export CRAFT_FONTS_DIR="$PWD/craft-fonts" CRAFT_FONTS_REQUIRED=1
 %{cargo_build} -p designcraft -p designcraft-cli
 
 %install
@@ -82,6 +87,12 @@ sed -e "s/@VERSION@/%{version}/g" \
   install -Dm0644 "assets/app-icon/hicolor/$f" "%{buildroot}%{_datadir}/icons/hicolor/$f"
 done
 
+# Licences of the embedded fonts.
+mkdir -p fonts-licenses
+for f in craft-fonts/fonts/*/OFL.txt; do
+  cp "$f" "fonts-licenses/$(basename "$(dirname "$f")")-OFL.txt"
+done
+
 # Marker read by the patched artcraft-launcher: updates come from the package manager.
 install -d %{buildroot}%{_datadir}/designcraft
 echo "Installed from a distribution package; update with zypper." \
@@ -93,6 +104,7 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/ai.storyteller.design
 
 %files
 %license LICENSE-APACHE LICENSE-MIT NOTICE
+%license fonts-licenses/*
 %doc README.md
 %{_bindir}/designcraft
 %{_bindir}/designcraft-cli
