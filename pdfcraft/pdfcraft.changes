@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Oct 14 15:28:32 UTC 2026 - obs-sync <xanaddams@users.noreply.github.com>
+
+- Update to version 0.8.0
+  * https://github.com/storytold/pdfcraft/releases/tag/v0.8.0
+
+-------------------------------------------------------------------
 Wed Oct 14 14:05:20 UTC 2026 - obs-sync <xanaddams@users.noreply.github.com>
 
 - Embed the fonts upstream's release builds embed (storytold/craft-fonts at
