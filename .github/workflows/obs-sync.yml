@@ -39,6 +39,9 @@ jobs:
           CHANGES_AUTHOR: "obs-sync <xanaddams@users.noreply.github.com>"
         run: |
           set -euo pipefail
+          # Work on the latest main: a queued run may start after another run pushed a bump.
+          git fetch --depth=1 origin main
+          git checkout -q -B main FETCH_HEAD
           changed=""
           for conf in */upstream.conf; do
             pkg=$(dirname "$conf")
