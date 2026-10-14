@@ -8,6 +8,11 @@
 # (docs/brand/LICENSE-brand.txt) and are shipped unmodified.
 #
 
+# openSUSE's %%cargo_build adds full debug info (-C debuginfo=2). We ship no -debuginfo
+# package and strip the binaries, and debug info is what pushes the LTO link past 10 GB on
+# the aarch64 build workers, so build without it.
+%global build_rustflags -Clink-arg=-Wl,-z,relro,-z,now -C debuginfo=0
+
 Name:           artcraft-launcher
 # Version is set by the obs-sync workflow from upstream.conf.
 Version:        0.4.1
@@ -56,6 +61,10 @@ mkdir -p .cargo
 cat cargo-vendor.toml >> .cargo/config.toml
 
 %build
+%ifarch aarch64
+# The aarch64 build workers have less memory: split the final optimisation a little.
+export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=4
+%endif
 export ARTCRAFT_LAUNCHER_BUILD_DATE=$(date -u -d "@${SOURCE_DATE_EPOCH:-$(date +%%s)}" +%%Y-%%m-%%d)
 %{cargo_build} -p artcraft-launcher
 

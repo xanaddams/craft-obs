@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Oct 14 03:41:45 UTC 2026 - obs-sync <xanaddams@users.noreply.github.com>
+
+- Build without debug info, and with 4 codegen units on aarch64, so the
+  LTO link fits in the build workers' memory
+
+-------------------------------------------------------------------
 Tue Oct 13 12:11:18 UTC 2026 - obs-sync <xanaddams@users.noreply.github.com>
 
 - Initial package, version 0.9.2
