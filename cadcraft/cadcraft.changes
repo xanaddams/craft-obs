@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Oct 15 12:41:56 UTC 2026 - obs-sync <xanaddams@users.noreply.github.com>
+
+- Update to version 0.7.0
+  * https://github.com/storytold/cadcraft/releases/tag/v0.7.0
+
+-------------------------------------------------------------------
 Wed Oct 14 14:05:20 UTC 2026 - obs-sync <xanaddams@users.noreply.github.com>
 
 - Embed the fonts upstream's release builds embed (storytold/craft-fonts at

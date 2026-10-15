@@ -14,7 +14,7 @@
 
 Name:           effectcraft
 # Version is set by the obs-sync workflow from upstream.conf.
-Version:        0.9.2
+Version:        0.10.0
 Release:        0
 Summary:        Motion graphics and visual effects compositor
 License:        Apache-2.0 OR MIT
