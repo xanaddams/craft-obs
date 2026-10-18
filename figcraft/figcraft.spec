@@ -14,7 +14,7 @@
 
 Name:           figcraft
 # Version is set by the obs-sync workflow from upstream.conf.
-Version:        0.6.0
+Version:        0.7.0
 Release:        0
 Summary:        Design and prototype user interfaces
 License:        (Apache-2.0 OR MIT) AND OFL-1.1

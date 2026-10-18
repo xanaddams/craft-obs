@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Sun Oct 18 12:05:30 UTC 2026 - obs-sync <xanaddams@users.noreply.github.com>
+
+- Update to version 0.5.1
+  * https://github.com/storytold/craft-launcher/releases/tag/v0.5.1
+
+-------------------------------------------------------------------
 Wed Oct 14 03:41:45 UTC 2026 - obs-sync <xanaddams@users.noreply.github.com>
 
 - Build without debug info, and with 4 codegen units on aarch64, so the
