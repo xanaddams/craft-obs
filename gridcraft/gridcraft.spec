@@ -14,7 +14,7 @@
 
 Name:           gridcraft
 # Version is set by the obs-sync workflow from upstream.conf.
-Version:        0.9.0
+Version:        0.10.0
 Release:        0
 Summary:        Calculate, analyse and chart data in workbooks
 License:        Apache-2.0 OR MIT
