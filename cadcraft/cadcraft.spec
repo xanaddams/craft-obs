@@ -14,7 +14,7 @@
 
 Name:           cadcraft
 # Version is set by the obs-sync workflow from upstream.conf.
-Version:        0.10.0
+Version:        0.12.0
 Release:        0
 Summary:        Draft, dimension and plot 2D drawings
 License:        (Apache-2.0 OR MIT) AND OFL-1.1

@@ -14,7 +14,7 @@
 
 Name:           soundcraft
 # Version is set by the obs-sync workflow from upstream.conf.
-Version:        0.11.0
+Version:        0.12.1
 Release:        0
 Summary:        Record, edit and mix audio and MIDI
 License:        Apache-2.0 OR MIT

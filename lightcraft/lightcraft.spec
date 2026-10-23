@@ -14,7 +14,7 @@
 
 Name:           lightcraft
 # Version is set by the obs-sync workflow from upstream.conf.
-Version:        0.11.0
+Version:        0.13.0
 Release:        0
 Summary:        Organise photos and develop raw files, non-destructively
 License:        (Apache-2.0 OR MIT) AND OFL-1.1
