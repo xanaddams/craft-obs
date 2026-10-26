@@ -14,7 +14,7 @@
 
 Name:           pdfcraft
 # Version is set by the obs-sync workflow from upstream.conf.
-Version:        0.13.0
+Version:        0.14.0
 Release:        0
 Summary:        Read, organize, combine, split and secure PDFs
 License:        (Apache-2.0 OR MIT) AND OFL-1.1

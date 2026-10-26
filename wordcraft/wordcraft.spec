@@ -14,7 +14,7 @@
 
 Name:           wordcraft
 # Version is set by the obs-sync workflow from upstream.conf.
-Version:        0.10.0
+Version:        0.11.0
 Release:        0
 Summary:        Write and design documents; open and save Word files
 License:        (Apache-2.0 OR MIT) AND OFL-1.1
