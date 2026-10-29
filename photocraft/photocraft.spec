@@ -14,7 +14,7 @@
 
 Name:           photocraft
 # Version is set by the obs-sync workflow from upstream.conf.
-Version:        0.16.0
+Version:        0.17.0
 Release:        0
 Summary:        Edit photos and layered PSD documents
 License:        (Apache-2.0 OR MIT) AND OFL-1.1
