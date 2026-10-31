@@ -15,7 +15,7 @@
 
 Name:           artcraft-launcher
 # Version is set by the obs-sync workflow from upstream.conf.
-Version:        0.10.0
+Version:        0.11.1
 Release:        0
 Summary:        Install, update and launch the Craft App Suite
 License:        Apache-2.0 OR MIT

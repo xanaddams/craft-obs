@@ -14,7 +14,7 @@
 
 Name:           deckcraft
 # Version is set by the obs-sync workflow from upstream.conf.
-Version:        0.12.0
+Version:        0.13.1
 Release:        0
 Summary:        Create and present slide decks
 License:        (Apache-2.0 OR MIT) AND OFL-1.1
